@@ -1,0 +1,38 @@
+{
+  "family": "electricity-demand-forecasting-scheduler",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::634740393914:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "scheduler",
+      "image": "634740393914.dkr.ecr.us-east-1.amazonaws.com/electricity-demand-forecasting:latest",
+      "command": ["python", "src/scheduler.py"],
+      "secrets": [
+        {"name": "ENTSOE_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:634740393914:secret:electricity-demand-forecasting/entsoe-api-key-dJPMWa"},
+        {"name": "OPENWEATHER_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:634740393914:secret:electricity-demand-forecasting/openweather-api-key-9ky8Ma"}
+      ],
+      "mountPoints": [{"sourceVolume": "efs-data", "containerPath": "/app/data"}],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/electricity-demand-forecasting-scheduler",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "scheduler",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "efs-data",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-02507e5d414e1ba0e",
+        "rootDirectory": "/"
+      }
+    }
+  ]
+}

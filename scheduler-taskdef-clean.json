@@ -1,0 +1,71 @@
+{
+    "containerDefinitions":  [
+                                 {
+                                     "name":  "scheduler",
+                                     "image":  "634740393914.dkr.ecr.us-east-1.amazonaws.com/electricity-demand-forecasting:latest",
+                                     "cpu":  0,
+                                     "portMappings":  [
+
+                                                      ],
+                                     "essential":  true,
+                                     "command":  [
+                                                     "python",
+                                                     "scheduler.py"
+                                                 ],
+                                     "environment":  [
+
+                                                     ],
+                                     "mountPoints":  [
+                                                         {
+                                                             "sourceVolume":  "efs-data",
+                                                             "containerPath":  "/app/data"
+                                                         }
+                                                     ],
+                                     "volumesFrom":  [
+
+                                                     ],
+                                     "secrets":  [
+                                                     {
+                                                         "name":  "ENTSOE_API_KEY",
+                                                         "valueFrom":  "arn:aws:secretsmanager:us-east-1:634740393914:secret:electricity-demand-forecasting/entsoe-api-key-dJPMWa"
+                                                     },
+                                                     {
+                                                         "name":  "OPENWEATHER_API_KEY",
+                                                         "valueFrom":  "arn:aws:secretsmanager:us-east-1:634740393914:secret:electricity-demand-forecasting/openweather-api-key-9ky8Ma"
+                                                     }
+                                                 ],
+                                     "logConfiguration":  {
+                                                              "logDriver":  "awslogs",
+                                                              "options":  {
+                                                                              "awslogs-group":  "/ecs/electricity-demand-forecasting-scheduler",
+                                                                              "awslogs-create-group":  "true",
+                                                                              "awslogs-region":  "us-east-1",
+                                                                              "awslogs-stream-prefix":  "scheduler"
+                                                                          }
+                                                          },
+                                     "systemControls":  [
+
+                                                        ]
+                                 }
+                             ],
+    "family":  "electricity-demand-forecasting-scheduler",
+    "executionRoleArn":  "arn:aws:iam::634740393914:role/ecsTaskExecutionRole",
+    "networkMode":  "awsvpc",
+    "volumes":  [
+                    {
+                        "name":  "efs-data",
+                        "efsVolumeConfiguration":  {
+                                                       "fileSystemId":  "fs-02507e5d414e1ba0e",
+                                                       "rootDirectory":  "/"
+                                                   }
+                    }
+                ],
+    "placementConstraints":  [
+
+                             ],
+    "requiresCompatibilities":  [
+                                    "FARGATE"
+                                ],
+    "cpu":  "256",
+    "memory":  "512"
+}

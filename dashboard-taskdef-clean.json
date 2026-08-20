@@ -1,0 +1,80 @@
+{
+    "containerDefinitions":  [
+                                 {
+                                     "name":  "dashboard",
+                                     "image":  "634740393914.dkr.ecr.us-east-1.amazonaws.com/electricity-demand-forecasting:latest",
+                                     "cpu":  0,
+                                     "portMappings":  [
+                                                          {
+                                                              "containerPort":  8501,
+                                                              "hostPort":  8501,
+                                                              "protocol":  "tcp"
+                                                          }
+                                                      ],
+                                     "essential":  true,
+                                     "command":  [
+                                                     "python",
+                                                     "-m",
+                                                     "streamlit",
+                                                     "run",
+                                                     "dashboard.py",
+                                                     "--server.port=8501",
+                                                     "--server.address=0.0.0.0"
+                                                 ],
+                                     "environment":  [
+
+                                                     ],
+                                     "mountPoints":  [
+                                                         {
+                                                             "sourceVolume":  "efs-data",
+                                                             "containerPath":  "/app/data"
+                                                         }
+                                                     ],
+                                     "volumesFrom":  [
+
+                                                     ],
+                                     "secrets":  [
+                                                     {
+                                                         "name":  "ENTSOE_API_KEY",
+                                                         "valueFrom":  "arn:aws:secretsmanager:us-east-1:634740393914:secret:electricity-demand-forecasting/entsoe-api-key-dJPMWa"
+                                                     },
+                                                     {
+                                                         "name":  "OPENWEATHER_API_KEY",
+                                                         "valueFrom":  "arn:aws:secretsmanager:us-east-1:634740393914:secret:electricity-demand-forecasting/openweather-api-key-9ky8Ma"
+                                                     }
+                                                 ],
+                                     "logConfiguration":  {
+                                                              "logDriver":  "awslogs",
+                                                              "options":  {
+                                                                              "awslogs-group":  "/ecs/electricity-demand-forecasting-dashboard",
+                                                                              "awslogs-create-group":  "true",
+                                                                              "awslogs-region":  "us-east-1",
+                                                                              "awslogs-stream-prefix":  "dashboard"
+                                                                          }
+                                                          },
+                                     "systemControls":  [
+
+                                                        ]
+                                 }
+                             ],
+    "family":  "electricity-demand-forecasting-dashboard",
+    "executionRoleArn":  "arn:aws:iam::634740393914:role/ecsTaskExecutionRole",
+    "networkMode":  "awsvpc",
+    "volumes":  [
+                    {
+                        "name":  "efs-data",
+                        "efsVolumeConfiguration":  {
+                                                       "fileSystemId":  "fs-02507e5d414e1ba0e",
+                                                       "rootDirectory":  "/"
+                                                   }
+                    }
+                ],
+    "placementConstraints":  [
+
+                             ],
+    "requiresCompatibilities":  [
+                                    "FARGATE"
+                                ],
+    "cpu":  "512",
+    "memory":  "1024"
+}

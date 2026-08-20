@@ -21,9 +21,9 @@ This project pulls live electricity demand data from **ENTSO-E** and weather dat
 
 ## 📸 Screenshots
 
-| Dashboard Overview | Forecast vs. Actual | Model Comparison |
+| Dashboard Overview | Forecast vs. Actual | Financial Goal Tracker |
 |:---:|:---:|:---:|
-| ![Dashboard overview](docs/img1.png) | ![Forecast comparison](docs/img2.png) | ![Model comparison](docs/img3.png) |
+| ![Dashboard overview](docs/img1.png) | ![Forecast comparison](docs/img2.png) | ![Financial Goal Tracker](docs/img3.png) |
 
 ---
 
@@ -57,7 +57,8 @@ graph LR
 ## ✨ Features
 
 - 🔄 Automated data collection from live grid and weather APIs
-- 📊 Interactive Streamlit dashboard for exploring forecasts
+- 📊 Interactive Streamlit dashboard for exploring forecasts (LightGBM model)
+- 💰 **Financial Goal Tracker** — translates demand forecasts into a personal electricity cost estimate, with configurable monthly/annual budget goals, spend projections, and budget-pace visualizations
 - 📦 Fully containerized — reproducible builds via Docker
 - ☁️ Serverless deployment — no EC2 instances to manage
 - 🔐 Secrets never hardcoded — pulled at runtime from AWS Secrets Manager

@@ -1,150 +1,84 @@
-# ⚡ Electricity Demand Forecasting — Spain
+# ⚡ Electricity Demand Forecasting
 
-Hourly electricity demand forecasting for Spain's national grid, with a live
-Streamlit dashboard, an hourly data-collection scheduler, and a model
-comparison pipeline (Linear Regression, Random Forest, XGBoost, LightGBM).
+An end-to-end pipeline that forecasts electricity demand using real-time grid and weather data, deployed as a containerized service on AWS.
 
-Built for **COSC/INDE 6397 — Big Data Analytics** (Team 6: Himavarsha,
-Lyba Siddiqui, Ranjitha Basavaraju).
+![AWS](https://img.shields.io/badge/AWS-ECS%20%7C%20Fargate-orange?logo=amazonaws)
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red?logo=streamlit)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker)
+![Status](https://img.shields.io/badge/status-live-brightgreen)
 
-## Results
+---
 
-| Model | RMSE (MW) | MAE (MW) | R² |
-|---|---|---|---|
-| **XGBoost** | **507.5** | — | **0.9874** |
-| LightGBM | 493.3† | — | — |
-| Random Forest | — | — | — |
-| Linear Regression | — | — | — |
+## 📖 Overview
 
-† From a later retraining run — see `docs/model_comparison_results.csv` for
-the exact numbers produced by the model in this repo.
+This project pulls live electricity demand data from **ENTSO-E** and weather data from **OpenWeatherMap**, trains a forecasting model, and serves the results through an interactive **Streamlit dashboard** — all running on a serverless AWS architecture.
 
-- 24-hour-ahead hourly load forecasting
-- Peak-demand classification (top decile of load): **F1 = 0.901**
-- Confirmed the **Merit Order Effect** on Spain's day-ahead price data
-- Deployed as a live dashboard with an **hourly scheduler** and **SQLite**
-  backend, refetching real grid + weather data every hour and re-forecasting
-  the next 24 hours
+> 🔗 **Live demo:** [http://100.62.91.110:8501](http://100.62.91.110:8501)
+> *(Scaled to zero when not in active use to control cost — open an issue or reach out if the link is down and I'll spin it back up.)*
 
-## Architecture
+---
 
-```
-┌─────────────────┐      hourly       ┌──────────────┐
-│  ENTSO-E API     │ ───────────────▶ │              │
-│  (grid load,     │                  │  scheduler.py │──▶ live_data.db (SQLite)
-│  generation,     │                  │  (APScheduler)│      actuals / predictions / errors
-│  day-ahead price)│                  │              │
-└─────────────────┘                  └──────┬───────┘
-┌─────────────────┐                         │ loads xgboost_model.joblib
-│ OpenWeatherMap   │ ───────────────────────▶│ or lightgbm_model.joblib
-│ (5-city weather) │                         │ (user-selected)
-└─────────────────┘                         ▼
-                                    ┌──────────────────┐
-                                    │  dashboard.py     │◀── reads live_data.db
-                                    │  (Streamlit UI)   │
-                                    └──────────────────┘
+## 📸 Screenshots
+
+| Dashboard Overview | Forecast vs. Actual | Model Comparison |
+|:---:|:---:|:---:|
+| ![Dashboard overview](docs/img1.png) | ![Forecast comparison](docs/img2.png) | ![Model comparison](docs/img3.png) |
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph LR
+    A[ENTSO-E API] --> C[Scheduler<br/>ECS Fargate]
+    B[OpenWeatherMap API] --> C
+    C -->|writes| D[(SQLite on EFS)]
+    D -->|reads| E[Dashboard<br/>ECS Fargate + Streamlit]
+    E --> F[👤 Public Dashboard<br/>:8501]
+
+    style C fill:#FF9900,color:#fff
+    style E fill:#FF9900,color:#fff
+    style D fill:#569A31,color:#fff
 ```
 
-Two long-running processes share one SQLite database:
-- **`scheduler.py`** — fetches fresh actuals every `FETCH_INTERVAL_MIN`
-  minutes, engineers features, forecasts the next `FORECAST_HOURS` hours with
-  **every** trained model, and stores results tagged by model name.
-- **`dashboard.py`** — a Streamlit app that reads from the same database and
-  lets the user toggle between the LightGBM and XGBoost forecasts.
+| Layer | Technology |
+|---|---|
+| **Data sources** | ENTSO-E (grid demand), OpenWeatherMap (weather) |
+| **Compute** | AWS ECS on Fargate (serverless containers) — `scheduler` + `dashboard` services |
+| **Storage** | AWS EFS (persistent, shared SQLite database) |
+| **Secrets** | AWS Secrets Manager |
+| **Access control** | Scoped IAM roles, VPC security groups |
+| **Frontend** | Streamlit |
+| **Containerization** | Docker, pushed to AWS ECR |
 
-## Repo structure
+---
 
-```
-├── src/
-│   ├── config.py          # env-var-based settings — no secrets committed
-│   ├── fetcher.py         # ENTSO-E + OpenWeatherMap API clients
-│   ├── features.py        # shared feature engineering (train + live)
-│   ├── database.py        # SQLite schema + read/write helpers
-│   ├── train.py           # trains & compares all 4 models, saves artifacts
-│   ├── scheduler.py       # hourly fetch → feature → forecast → store loop
-│   └── dashboard.py       # Streamlit live dashboard
-├── models/                 # trained model artifacts (see note below)
-├── docs/
-│   ├── model_comparison_results.csv
-│   └── AWS_DEPLOYMENT.md  # step-by-step cloud deployment guide
-├── requirements.txt
-├── Dockerfile
-├── .env.example
-└── .gitignore
-```
+## ✨ Features
 
-> **Note on `models/`:** this repo ships the trained `xgboost_model.joblib`
-> and `lightgbm_model.joblib` used by the live scheduler/dashboard, plus
-> `imputer.pkl` and `peak_threshold.pkl`. The generic best-model bundle
-> (`model.pkl`) and the saved feature-name list (`features.pkl`) that
-> `train.py` also produces aren't included yet — run `python src/train.py`
-> once locally (with the two CSVs below) to regenerate them before starting
-> the scheduler, or add your existing copies into `models/`.
+- 🔄 Automated data collection from live grid and weather APIs
+- 📊 Interactive Streamlit dashboard for exploring forecasts
+- 📦 Fully containerized — reproducible builds via Docker
+- ☁️ Serverless deployment — no EC2 instances to manage
+- 🔐 Secrets never hardcoded — pulled at runtime from AWS Secrets Manager
+- 💾 Persistent storage across container restarts via EFS
 
-## Data
+---
 
-Trained on the [Hourly Energy Demand Generation and Weather — Spain
-dataset](https://www.kaggle.com/datasets/nicholasjhana/energy-consumption-generation-prices-and-weather)
-(Kaggle). The raw CSVs (`energy_dataset.csv`, `weather_features.csv`, ~26MB
-combined) aren't committed to this repo — download them from Kaggle and
-place them at the repo root before running `train.py`.
+## 🚀 Getting Started
 
-## Local setup
+- **Prerequisites**: Docker, AWS CLI configured with appropriate credentials, and API keys for ENTSO-E and OpenWeatherMap
+- **Local run**: clone the repo, install dependencies from `requirements.txt`, set your API keys as environment variables, then run the training script followed by the Streamlit dashboard
+- **Refreshing data**: the scheduler task can be triggered manually via an ECS `run-task` command against the `electricity-demand-forecasting-scheduler` task definition
 
-```bash
-git clone <this-repo>
-cd electricity-demand-forecasting
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+---
 
-cp .env.example .env
-# edit .env with your real ENTSOE_API_KEY and OPENWEATHER_API_KEY
-#   - ENTSO-E key: https://transparency.entsoe.eu/ (free, request via email)
-#   - OpenWeatherMap key: https://openweathermap.org/api (free tier)
+## 🛠️ Tech Stack
 
-# 1. Train (only needed once, or to retrain)
-cd src
-python train.py
+`Python` · `Streamlit` · `Docker` · `AWS ECS/Fargate` · `AWS ECR` · `AWS EFS` · `AWS Secrets Manager` · `AWS IAM`
 
-# 2. Start the hourly scheduler (separate terminal)
-python scheduler.py
+---
 
-# 3. Start the dashboard (separate terminal)
-streamlit run dashboard.py
-```
+## 📄 License
 
-## Docker
-
-```bash
-docker build -t electricity-forecast .
-docker run --env-file .env -p 8501:8501 electricity-forecast
-```
-
-Runs the dashboard by default. To run the scheduler instead:
-
-```bash
-docker run --env-file .env electricity-forecast python scheduler.py
-```
-
-## Cloud deployment (AWS)
-
-Deployed on **AWS ECS Fargate** (dashboard as a long-running service,
-scheduler as an EventBridge-triggered scheduled task), with credentials in
-**AWS Secrets Manager** and the SQLite database on an **EFS** volume so it
-survives redeploys. Full walkthrough with exact CLI commands:
-**[`docs/AWS_DEPLOYMENT.md`](docs/AWS_DEPLOYMENT.md)**.
-
-## Security note
-
-No API keys are hardcoded anywhere in this codebase. All credentials are
-read from environment variables via `src/config.py`
-(`os.environ.get(...)`) — locally via a git-ignored `.env` file, and in
-production via AWS Secrets Manager injected as ECS task environment
-variables. `.gitignore` excludes `.env`, the SQLite database, logs, and the
-raw training CSVs.
-
-## Tech stack
-
-Python · pandas · scikit-learn · XGBoost · LightGBM · Streamlit · Plotly ·
-APScheduler · SQLite · Docker · AWS (ECS Fargate, EventBridge, Secrets
-Manager, ECR, EFS)
+MIT

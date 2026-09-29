@@ -15,7 +15,7 @@ An end-to-end pipeline that forecasts electricity demand using real-time grid an
 This project pulls live electricity demand data from **ENTSO-E** and weather data from **OpenWeatherMap**, trains a forecasting model, and serves the results through an interactive **Streamlit dashboard** — all running on a serverless AWS architecture.
 
 > 🔗 **Live demo:** [http://100.62.91.110:8501](http://100.62.91.110:8501)
-> *(Scaled to zero when not in active use to control cost — open an issue or reach out if the link is down and I'll spin it back up.)*
+
 
 ---
 
